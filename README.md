@@ -1,14 +1,46 @@
 # Claude to LM Studio Shim Proxy
 
-A lightweight proxy service that bridges Claude API requests to a local LM Studio instance.
+A proxy server that bridges Anthropic's Claude API to a local LM Studio instance. Handles API compatibility fixes and optional speculative decoding.
 
 ## Features
 
-- FastAPI-based proxy server
-- Forwards Claude `/v1/messages` requests to LM Studio `/v1/chat/completions`
-- Optional authentication token support
-- Health check endpoint
-- Containerized with Docker
+- **API Compatibility**: Automatically patches tool schemas to add missing `properties: {}` for LM Studio compatibility
+- **Full Path Proxy**: Proxies all HTTP methods (GET, POST, PUT, DELETE, PATCH) to any endpoint
+- **Streaming Support**: Preserves streaming responses for real-time output
+- **Speculative Decoding**: Optional draft model injection for faster inference
+- **Health Check**: Detailed health endpoint showing configuration
+- **FastAPI-based**: Modern async Python web framework
+
+## What It Fixes
+
+LM Studio requires tool input schemas to have a `properties` field, while Anthropic's API does not enforce this. This proxy automatically patches the request to ensure compatibility.
+
+### Example: Tool Schema Patching
+
+**Input:**
+```json
+{
+  "tools": [{
+    "name": "example_tool",
+    "input_schema": {
+      "type": "object"
+    }
+  }]
+}
+```
+
+**Output (patched):**
+```json
+{
+  "tools": [{
+    "name": "example_tool",
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    }
+  }]
+}
+```
 
 ## Quick Start
 
@@ -42,41 +74,66 @@ docker build -t lmstudio-claude-shim-proxy .
 
 ```bash
 docker run -p 8000:8000 \
-  -e LM_STUDIO_URL=http://host.docker.internal:1234 \
+  -e LMSTUDIO_URL=http://host.docker.internal:1234 \
   lmstudio-claude-shim-proxy
 ```
 
-### Configuration
+**With speculative decoding:**
+
+```bash
+docker run -p 8000:8000 \
+  -e LMSTUDIO_URL=http://host.docker.internal:1234 \
+  -e DRAFT_MODEL=llama-2-7b-chat \
+  lmstudio-claude-shim-proxy
+```
+
+### Docker Compose
+
+```bash
+# With default settings
+docker-compose up
+
+# With draft model for speculative decoding
+DRAFT_MODEL=llama-2-7b-chat docker-compose up
+```
+
+## Configuration
 
 Environment variables:
 
-- `LM_STUDIO_URL` - LM Studio API base URL (default: `http://localhost:1234`)
-- `CLAUDE_PROXY_AUTH_TOKEN` - Optional authentication token for requests
+- `LMSTUDIO_URL` - LM Studio API base URL (default: `http://host.docker.internal:1234`)
+- `DRAFT_MODEL` - Optional draft model name for speculative decoding
+- `SPEC_FIELD` - Speculative decoding field name (default: `lmstudio_speculative_decoding`)
 
 ## API Endpoints
 
 ### Health Check
 
 ```
-GET /health
+GET /_health
 ```
 
-Returns `{"status": "healthy", "service": "claude-shim-proxy"}`
+Returns health status and configuration:
 
-### Claude Messages Proxy
-
-```
-POST /v1/messages
-Authorization: Bearer <token>
-
+```json
 {
-  "model": "...",
-  "messages": [...],
-  ...
+  "status": "ok",
+  "upstream": "http://host.docker.internal:1234",
+  "speculative_decoding": {
+    "enabled": false,
+    "draft_model": null,
+    "field_name": "lmstudio_speculative_decoding"
+  }
 }
 ```
 
-Forwards to LM Studio's `/v1/chat/completions` endpoint.
+### Proxy (All Routes)
+
+```
+GET|POST|PUT|DELETE|PATCH /{path}
+```
+
+Proxies all requests to the configured LM Studio URL. Automatically patches tool schemas and optionally injects speculative decoding config.
 
 ## Development
 
@@ -105,9 +162,34 @@ uv run mypy src
 .
 ├── src/
 │   ├── __init__.py
-│   └── main.py           # Main application
-├── tests/                # Test directory
-├── pyproject.toml        # Project configuration & dependencies
-├── Dockerfile            # Docker image definition
+│   └── main.py                    # Main proxy application
+├── tests/
+│   ├── __init__.py
+│   └── test_main.py
+├── pyproject.toml                 # Project configuration & dependencies
+├── requirements.txt               # Compiled dependencies
+├── Dockerfile                     # Docker image definition
+├── docker-compose.yml             # Docker Compose configuration
+├── .dockerignore
+├── .gitignore
 └── README.md
 ```
+
+## Troubleshooting
+
+**Check proxy is working:**
+```bash
+curl http://localhost:8000/_health
+```
+
+**View logs with Docker Compose:**
+```bash
+docker-compose logs -f proxy
+```
+
+**Verify tool patching:**
+Enable debug logging by setting `logging.basicConfig(level=logging.DEBUG)` in `main.py`
+
+## License
+
+MIT

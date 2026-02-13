@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  proxy:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      LMSTUDIO_URL: http://host.docker.internal:1234
+      DRAFT_MODEL: ${DRAFT_MODEL:-}
+      SPEC_FIELD: ${SPEC_FIELD:-lmstudio_speculative_decoding}
+    volumes:
+      - .:/app
+    command: python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
