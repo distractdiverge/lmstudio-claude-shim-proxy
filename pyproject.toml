@@ -11,11 +11,6 @@ dependencies = [
     "pytest>=9.0.2",
 ]
 
-# package layout for uv_build (src/<package>)
-packages = [
-    { include = "lmstudio_claude_shim_proxy" },
-]
-
 [tool.uv]
 dev-dependencies = [
     "pytest>=7.4.0",
