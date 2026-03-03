@@ -5,7 +5,7 @@ from lmstudio_claude_shim_proxy import app
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    return TestClient(app, base_url="http://a.test.server")
 
 
 def test_health(client):

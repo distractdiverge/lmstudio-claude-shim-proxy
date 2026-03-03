@@ -67,6 +67,17 @@ def inject_speculative_decoding(data: dict) -> bool:
     data[SPEC_FIELD] = {"draft_model": DRAFT_MODEL}
     return True
 
+@app.get("/_health")
+async def health():
+    return {
+        "status": "ok",
+        "upstream": LMSTUDIO_URL,
+        "speculative_decoding": {
+            "enabled": bool(DRAFT_MODEL),
+            "draft_model": DRAFT_MODEL or None,
+            "field_name": SPEC_FIELD,
+        },
+    }
 
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy(path: str, request: Request):
@@ -115,15 +126,3 @@ async def proxy(path: str, request: Request):
         media_type="text/event-stream",
     )
 
-
-@app.get("/_health")
-async def health():
-    return {
-        "status": "ok",
-        "upstream": LMSTUDIO_URL,
-        "speculative_decoding": {
-            "enabled": bool(DRAFT_MODEL),
-            "draft_model": DRAFT_MODEL or None,
-            "field_name": SPEC_FIELD,
-        },
-    }
