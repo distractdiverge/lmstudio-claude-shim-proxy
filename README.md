@@ -57,7 +57,7 @@ LM Studio requires tool input schemas to have a `properties` field, while Anthro
 uv pip install -r pyproject.toml
 
 # Run the proxy
-python -m uvicorn src.main:app --reload
+python -m uvicorn lmstudio_claude_shim_proxy.main:app --reload
 ```
 
 The proxy will be available at `http://localhost:8000`

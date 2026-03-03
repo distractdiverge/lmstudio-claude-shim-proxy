@@ -11,4 +11,4 @@ services:
       SPEC_FIELD: ${SPEC_FIELD:-lmstudio_speculative_decoding}
     volumes:
       - .:/app
-    command: python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    command: python -m uvicorn lmstudio_claude_shim_proxy.main:app --host 0.0.0.0 --port 8000 --reload

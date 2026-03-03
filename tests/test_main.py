@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from src.main import app
+from lmstudio_claude_shim_proxy import app
 
 
 @pytest.fixture

@@ -8,6 +8,12 @@ dependencies = [
     "uvicorn[standard]>=0.24.0",
     "httpx>=0.25.0",
     "pydantic>=2.5.0",
+    "pytest>=9.0.2",
+]
+
+# package layout for uv_build (src/<package>)
+packages = [
+    { include = "lmstudio_claude_shim_proxy" },
 ]
 
 [tool.uv]
@@ -20,12 +26,12 @@ dev-dependencies = [
 ]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.10.8,<0.11.0"]
+build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=src --cov-report=term-missing"
+addopts = "--cov=lmstudio_claude_shim_proxy --cov-report=term-missing"
 
 [tool.black]
 line-length = 100
